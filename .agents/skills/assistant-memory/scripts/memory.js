@@ -7,7 +7,7 @@ const fsp = require("node:fs/promises");
 const os = require("node:os");
 const path = require("node:path");
 
-const USER_MEMORY_ROOT = path.join(os.homedir(), ".agents", "assistant", "memory");
+const DEFAULT_AGENT = "assistant";
 const DEFAULT_LIMIT = 4;
 const STOP_WORDS = new Set([
   "a", "an", "the", "and", "or", "to", "of", "in", "on", "for", "with", "from",
@@ -32,29 +32,49 @@ function findRepoRoot(startDirectory) {
   }
 }
 
-function getWorkspaceMemoryRoot() {
+function getUserMemoryRoot(agent = DEFAULT_AGENT) {
+  const agentPath = path.join(os.homedir(), ".memory", agent);
+  if (!fs.existsSync(agentPath)) {
+    const directPath = path.join(os.homedir(), ".memory");
+    if (fs.existsSync(path.join(directPath, "INDEX.md"))) {
+      return directPath;
+    }
+  }
+  return agentPath;
+}
+
+function getWorkspaceMemoryRoot(agent = DEFAULT_AGENT) {
   const repoRoot = findRepoRoot(process.cwd());
   if (!repoRoot) {
     return null;
   }
-  return path.join(repoRoot, ".agents", "assistant", "memory");
+  const agentPath = path.join(repoRoot, ".memory", agent);
+  if (!fs.existsSync(agentPath)) {
+    const directPath = path.join(repoRoot, ".memory");
+    if (fs.existsSync(path.join(directPath, "INDEX.md"))) {
+      return directPath;
+    }
+  }
+  return agentPath;
 }
 
 function parseArgs(argv) {
   const [command, ...rest] = argv;
   if (!command) {
     throw new MemoryError(
-      "Usage: node scripts/memory.js <search|list|stats> [query] [--limit N] [--archive] [--store workspace|user|all] [--root <path>] [--json]"
+      "Usage: node scripts/memory.js <search|list|stats> [query] [--limit N] [--archive] [--store workspace|user|all] [--root <path>] [--agent <name>] [--json]"
     );
   }
 
-  const flags = new Set(rest.filter((value) => value.startsWith("--") && !value.startsWith("--limit") && !value.startsWith("--store") && !value.startsWith("--root")));
+  const flags = new Set(rest.filter((value) => value.startsWith("--") && !value.startsWith("--limit") && !value.startsWith("--store") && !value.startsWith("--root") && !value.startsWith("--agent")));
   const limitFlag = rest.find((value) => value.startsWith("--limit="));
   const limitIndex = rest.indexOf("--limit");
   const storeFlag = rest.find((value) => value.startsWith("--store="));
   const storeIndex = rest.indexOf("--store");
   const rootFlag = rest.find((value) => value.startsWith("--root="));
   const rootIndex = rest.indexOf("--root");
+  const agentFlag = rest.find((value) => value.startsWith("--agent="));
+  const agentIndex = rest.indexOf("--agent");
 
   let limit = DEFAULT_LIMIT;
   if (limitFlag) {
@@ -83,11 +103,18 @@ function parseArgs(argv) {
     root = rest[rootIndex + 1];
   }
 
+  let agent = DEFAULT_AGENT;
+  if (agentFlag) {
+    agent = agentFlag.slice("--agent=".length);
+  } else if (agentIndex !== -1 && rest[agentIndex + 1]) {
+    agent = rest[agentIndex + 1];
+  }
+
   const positional = rest.filter((value, index) => {
     if (value.startsWith("--")) {
       return false;
     }
-    if (index > 0 && (rest[index - 1] === "--limit" || rest[index - 1] === "--store" || rest[index - 1] === "--root")) {
+    if (index > 0 && (rest[index - 1] === "--limit" || rest[index - 1] === "--store" || rest[index - 1] === "--root" || rest[index - 1] === "--agent")) {
       return false;
     }
     return true;
@@ -100,23 +127,24 @@ function parseArgs(argv) {
     includeArchive: flags.has("--archive"),
     store,
     root,
+    agent,
     json: flags.has("--json"),
   };
 }
 
-function resolveStores(store, root) {
+function resolveStores(store, root, agent = DEFAULT_AGENT) {
   if (root) {
     return [{ name: "root", root: path.resolve(root) }];
   }
   const stores = [];
   if (store === "all" || store === "workspace") {
-    const workspaceRoot = getWorkspaceMemoryRoot();
+    const workspaceRoot = getWorkspaceMemoryRoot(agent);
     if (workspaceRoot) {
       stores.push({ name: "workspace", root: workspaceRoot });
     }
   }
   if (store === "all" || store === "user") {
-    stores.push({ name: "user", root: USER_MEMORY_ROOT });
+    stores.push({ name: "user", root: getUserMemoryRoot(agent) });
   }
   return stores;
 }
@@ -366,7 +394,7 @@ async function search(args) {
   }
 
   const hits = [];
-  for (const store of resolveStores(args.store, args.root)) {
+  for (const store of resolveStores(args.store, args.root, args.agent)) {
     const loaded = await loadStoreFiles(store, args.includeArchive);
     for (const topic of loaded.topics) {
       const score = scoreTopic(topic, tokens);
@@ -408,7 +436,7 @@ async function search(args) {
 
 async function listTopics(args) {
   const topics = [];
-  for (const store of resolveStores(args.store, args.root)) {
+  for (const store of resolveStores(args.store, args.root, args.agent)) {
     const loaded = await loadStoreFiles(store, args.includeArchive);
     for (const topic of loaded.topics) {
       topics.push({
@@ -435,7 +463,7 @@ async function listTopics(args) {
 
 async function stats(args) {
   const stores = [];
-  for (const store of resolveStores(args.store, args.root)) {
+  for (const store of resolveStores(args.store, args.root, args.agent)) {
     const active = await loadStoreFiles(store, false);
     const withArchive = await loadStoreFiles(store, true);
     stores.push({

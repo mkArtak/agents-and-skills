@@ -23,7 +23,7 @@ On every user message that names a topic, person, project, decision, or standing
 
 1. Run `node scripts/memory.js search "<query>" --json --limit 4` from the `assistant-memory` skill. If there are no useful hits, retry once with `--archive`.
 2. Read only the returned topic files (at most 4). Treat them as the first layer of context.
-3. If the script is unavailable, grep `INDEX.md` and `topics/` in both memory stores and still open at most 4 files. Do not read `INDEX.md` in full when it has more than 25 data rows.
+3. If the script is unavailable, grep `INDEX.md` and `topics/` in both memory stores (`<git-root>/.memory/assistant/` and `~/.memory/assistant/`) and still open at most 4 files. Do not read `INDEX.md` in full when it has more than 25 data rows.
 
 If nothing matches, continue without pretending you remember. Mention that you used a memory only when it would change the answer or when the user asked what you remember. If memory and current evidence disagree, prefer current evidence and update the memory.
 

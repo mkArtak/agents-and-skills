@@ -1,10 +1,10 @@
 ---
 name: assistant-memory
 description: Search, write, and compact the Assistant agent's local Markdown memory stores. Use when recalling prior topics, saving a notable fact, forgetting a memory, or maintaining Assistant topic files as the memory set grows.
-compatibility: Requires Node.js 18+. Reads and writes local files under .agents/assistant/memory and ~/.agents/assistant/memory.
+compatibility: Requires Node.js 18+. Reads and writes local files under .memory/assistant and ~/.memory/assistant.
 metadata:
   author: mkArtak
-  version: "1.1"
+  version: "1.2"
   source-repository: mkArtak/agent-skills
   source-path: .agents/skills/assistant-memory
 ---
@@ -13,11 +13,11 @@ Manage Assistant's local topic memories so recall stays cheap as the number of t
 
 ## Stores
 
-- **Workspace:** `<git-root>/.agents/assistant/memory/` (skip if not in a git repo)
-- **User:** `~/.agents/assistant/memory/` (Windows: `%USERPROFILE%\.agents\assistant\memory`)
+- **Workspace:** `<git-root>/.memory/assistant/` (skip if not in a git repo)
+- **User:** `~/.memory/assistant/` (Windows: `%USERPROFILE%\.memory\assistant`)
 
 ```text
-memory/
+.memory/assistant/
   INDEX.md
   topics/<slug>.md
   archive/<YYYY>/<slug>.md

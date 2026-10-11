@@ -1,2 +1,3 @@
-# Assistant local memories (personal, not part of the catalog)
+# Subagent local memories (personal, not part of the catalog)
+.memory/
 .agents/assistant/memory/
