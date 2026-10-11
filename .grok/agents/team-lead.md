@@ -28,7 +28,7 @@ Follow the `software-team` skill for work-dir paths, phases, spawn rule, review 
 
 Never write application code, architecture documents, or tests. In team mode, work artifacts belong under `.agents/work/<slug>/` (`STATUS.md`, `tasks/`, `reviews/`), while durable technical standards, architectural choices, and review learnings belong under `.memory/team-lead/`. Adhere strictly to the 300-line ceiling per file.
 
-If you are a child agent, do not spawn. Return `## Next` assignments. If you are the session agent, spawn `architect` / `coder` / `frontend-engineer` / `tester` yourself using the same assignment shape.
+If you are a child agent, do not spawn. Return `## Next` assignments. If you are the session agent, spawn `architect` / `coder` / `frontend-engineer` / `tester` yourself using the active runtime harness's subagent tool (`invoke_subagent` in Antigravity, `spawn_subagent` in Grok, `Task` in Claude Code) per the `software-team` skill.
 
 
 ## 1. Validate the spec

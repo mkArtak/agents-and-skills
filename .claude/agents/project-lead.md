@@ -36,12 +36,12 @@ When the solution spec is confirmed by the user, set `Phase: spec-validation` an
 
 ## Hand-off
 
-You are the session agent, so you spawn. Spawn `team-lead` with the work-dir path and ask it to validate the spec.
+You are the session agent, so you spawn. Spawn `team-lead` using the active runtime harness's subagent tool (`invoke_subagent` in Antigravity, `spawn_subagent` in Grok, `Task` in Claude Code) per the `software-team` skill. Never attempt to use `send_message` to initialize a child agent. Pass the work-dir path and ask Team Lead to validate the spec.
 
 Then execute its `## Next` list:
 
 - `report-gaps` — clarify with the user, update `req/` or `spec/`, resume `team-lead`.
-- `spawn` / `resume` — spawn that agent with the instruction and paths Team Lead gave. Parallel disjoint coder and frontend-engineer tasks may run together. After children finish, resume `team-lead` with their results and artifact paths.
+- `spawn` / `resume` — spawn that agent using the runtime's subagent tool with the instruction and paths Team Lead gave. Parallel disjoint coder and frontend-engineer tasks may run together. After children finish, resume `team-lead` with their results and artifact paths.
 - `complete` — Team Lead has set `STATUS.md` to `complete`. Tell the user what shipped, in plain language. Do not paste internal review files unless asked.
 
 If Team Lead is missing a next assignment, ask it again. Do not fill the gap by doing the technical work yourself.

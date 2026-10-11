@@ -185,15 +185,24 @@ Use one `### Assignment` block per child. `task-id` matches `T1` / `R1` where it
 
 The session agent executes those assignments, then resumes `team-lead` with the child results and artifact paths.
 
-## Spawn mechanics (Grok)
+## Spawn mechanics across harnesses
 
-- Tool: `spawn_subagent`. `subagent_type` is the agent `name` (`team-lead`, `architect`, `coder`, `frontend-engineer`, `tester`).
-- `description`: `[<role>] <short label>` so the role shows in the task list.
-- Prompt is self-contained and includes the work-dir path, the relevant artifact paths, and the task.
-- Independent coder and frontend-engineer tasks with **disjoint** `Files` lists: spawn in parallel, shared workspace (`isolation` omitted / `none`), `background: true`, then wait for all before review.
+The session agent must inspect its available toolset and use the subagent tool corresponding to the active runtime harness. **Never use messaging tools (e.g. `send_message`) to spawn or initialize a child agent**; messaging tools require an existing session or conversation ID and will fail if the child process has not yet been spawned.
+
+### Harness tool mapping
+
+| Runtime / Harness | Spawning Tool & Syntax | Follow-up / Resuming |
+| --- | --- | --- |
+| **Antigravity (`agy`)** | `invoke_subagent(Subagents: [{ TypeName: "<agent-name>", Role: "<role>", Prompt: "..." }])` | `send_message(Recipient: <conversationId>, Message: "...")` using the ID returned by `invoke_subagent` |
+| **Grok (`grok-build`)** | `spawn_subagent(subagent_type: "<agent-name>", description: "[<role>] <label>", prompt: "...", background: true)` | `spawn_subagent(..., resume_from: <child-id>)` |
+| **Claude Code** | `Task(subagent_type="<agent-name>", prompt="...")` or runtime agent tool | Resumed task turns |
+
+- The agent identifier (`<agent-name>`) across all harnesses is the kebab-case agent `name`: `team-lead`, `architect`, `coder`, `frontend-engineer`, `tester`.
+- Prompt is always self-contained and includes the work-dir path, the relevant artifact paths, and the concrete instructions.
+- Independent coder and frontend-engineer tasks with **disjoint** `Files` lists: spawn in parallel (when the harness supports background/concurrent subagents), wait for all before review.
 - Overlapping `Files`, or a runtime that cannot isolate: run sequentially in the shared workspace.
-- Optional: `isolation: worktree` when overlapping work must run in parallel. Merge each worktree into the session workspace after that owner passes review, before Tester or a dependent task runs.
-- Fix cycles: `resume_from` the same owner's previous child id. Same `subagent_type`.
+- Optional: `isolation: worktree` when supported and overlapping work must run in parallel. Merge each worktree into the session workspace after that owner passes review, before Tester or a dependent task runs.
+- Fix cycles: resume or target the same owner with review feedback; do not cross roles.
 
 ## Review notes
 
