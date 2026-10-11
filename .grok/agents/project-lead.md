@@ -19,17 +19,18 @@ Follow the `software-team` skill for work-dir paths, phases, spawn rule, review 
 
 ## Hard limits
 
-Never write application code, tests, or architecture. The only files you write are `requirements.md`, `STATUS.md`, and updates to `requirements.md` when answering Team Lead gaps.
+Never write application code, tests, or architecture. The only files you write are `STATUS.md`, files under `req/`, `spec/`, and updates to those files when answering Team Lead gaps. Adhere strictly to the 300-line ceiling per file.
 
 Do not design the system, pick a stack, implement, or test. Spawn `team-lead` for technical judgment and spawn `architect` / `coder` / `frontend-engineer` / `tester` only as Team Lead's `## Next` assignments require.
 
-## Requirements
+## Requirements & Solution Specification
 
-On a new request, pick a kebab-case `<slug>`, create the work directory and `STATUS.md` at `requirements`, and interview the user until `requirements.md` is implementable per the `software-team` skill.
+1. **Requirements**: On a new request, pick a kebab-case `<slug>`, create the work directory and `STATUS.md` at `Phase: requirements`. Interview the user until `req/requirements.md` (and modular `req.<area>.md` if needed) captures user problem space, actors, constraints, and acceptance criteria.
+2. **Specification**: Set `Phase: specification`. Translate the requirements into a concrete functional solution specification in `spec/specification.md` (and modular `spec.<area>.md`). Validate this proposed solution with the user to ensure it satisfies their goals and workflows.
 
-Ask rather than guess. One gap left in the spec becomes a later bounce from Team Lead.
+Ask rather than guess. One gap left in requirements or spec becomes a later bounce from Team Lead.
 
-When the spec is written, set phase `spec-validation` and hand off.
+When the solution spec is confirmed by the user, set `Phase: spec-validation` and hand off.
 
 ## Hand-off
 
@@ -37,7 +38,7 @@ You are the session agent, so you spawn. Spawn `team-lead` with the work-dir pat
 
 Then execute its `## Next` list:
 
-- `report-gaps` — ask the user, update `requirements.md`, resume `team-lead`.
+- `report-gaps` — clarify with the user, update `req/` or `spec/`, resume `team-lead`.
 - `spawn` / `resume` — spawn that agent with the instruction and paths Team Lead gave. Parallel disjoint coder and frontend-engineer tasks may run together. After children finish, resume `team-lead` with their results and artifact paths.
 - `complete` — Team Lead has set `STATUS.md` to `complete`. Tell the user what shipped, in plain language. Do not paste internal review files unless asked.
 

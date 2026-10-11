@@ -51,6 +51,89 @@ Grok discovers project agents from `.grok/agents/` and user agents from `~/.grok
 
 Each agent can be invoked directly by the user as a standalone session agent for focused tasks (e.g. system design with `architect`, TDD implementation with `coder`, UI/UX presentation with `frontend-engineer`, verification with `tester`, or technical leadership with `team-lead`). For the full autonomous software-team loop, start as `project-lead` (spawns `team-lead` and workers as siblings) or as `team-lead` (spawns workers directly). Subagents cannot nest; the `software-team` skill defines the spawn and escalation rules.
 
+## Development contact model & partitioned storage
+
+When driving project development with the agent team, interaction follows a two-tier contact model paired with a partitioned, index-driven storage structure:
+
+1. **User $\leftrightarrow$ Project Lead (Product & Solution Scope)**:
+   - **Project Lead** is the primary contact point for the user. It interviews the user, captures needs under `req/`, translates them into a concrete functional solution specification under `spec/`, and confirms the spec with the user before engineering begins.
+   - Shields the user from technical implementation noise while escalating product decisions, edge-case trade-offs, and status.
+2. **Project Lead $\to$ Team Lead (Technical Handoff & Spec Validation)**:
+   - Once confirmed, Project Lead hands the solution specification to **Team Lead**, who validates feasibility against the codebase before commissioning architecture or tasks.
+3. **Team Lead $\leftrightarrow$ Workers (Engineering Execution & Reviews)**:
+   - Team Lead directs specialized workers (**Architect**, **Coder**, **Frontend Engineer**, **Tester**) via task assignments under `tasks/` and diff reviews under `reviews/`.
+   - Workers report exclusively to Team Lead (and cross-consult Architect on design questions). Tester validates the delivered implementation against `req/` and `spec/` into `validation/`.
+4. **Direct / Engineering-only Mode**:
+   - The user can bypass Project Lead and drive work directly with **Team Lead** for pure technical initiatives, or invoke any individual agent 1:1 for standalone tasks.
+
+### Contact and storage model diagram
+
+```mermaid
+flowchart TD
+    User(["👤 User / Stakeholder"])
+
+    subgraph Coordination ["Leadership & Coordination"]
+        PL["🎯 Project Lead<br/><i>Customer interface, requirements & solution spec</i>"]
+        TL["🧭 Team Lead<br/><i>Technical validation, task breakdown & reviews</i>"]
+    end
+
+    subgraph Storage [".agents/work/<slug>/ Partitioned Stores (Max 300 lines/file)"]
+        subgraph S_PL ["Project Lead Stores"]
+            REQ[("📁 req/<br/>requirements.md (Index)<br/>req.*.md")]
+            SPEC[("📁 spec/<br/>specification.md (Index)<br/>spec.*.md")]
+        end
+        subgraph S_TECH ["Technical & Execution Stores"]
+            ARCH_S[("📁 arch/<br/>architecture.md (Index)<br/>arch.*.md")]
+            TASKS_S[("📁 tasks/<br/>tasks.md (Index)<br/>tasks.*.md")]
+            REVIEWS_S[("📁 reviews/<br/>reviews.md<br/>review.*.md")]
+            VAL_S[("📁 validation/<br/>validation.md (Index)<br/>val.*.md")]
+        end
+    end
+
+    subgraph Execution ["Specialized Engineering Team"]
+        ARCH["📐 Architect"]
+        CODE["💻 Coder"]
+        FE["🎨 Frontend Engineer"]
+        TEST["🧪 Tester"]
+    end
+
+    %% User Interaction & Spec Definition
+    User <==>|"1. Elicits requirements & validates solution"| PL
+    PL -->|"Writes & indexes"| REQ
+    PL -->|"Translates & indexes"| SPEC
+
+    %% Hand-off to Team Lead
+    PL ==>|"2. Hands off validated spec"| TL
+    TL -->|"Validates spec feasibility"| SPEC
+
+    %% Technical Execution & Authoring
+    TL -->|"Assigns arch"| ARCH
+    ARCH -->|"Writes & indexes"| ARCH_S
+
+    TL -->|"Breaks down tasks"| TASKS_S
+    TL -->|"Assigns tasks"| CODE & FE
+    CODE & FE -.->|"Reads slice"| SPEC & ARCH_S
+
+    TL -->|"Reviews diffs"| REVIEWS_S
+    TL -->|"Assigns acceptance"| TEST
+    TEST -->|"Writes evidence"| VAL_S
+    VAL_S -.->|"Verifies against"| REQ
+
+    %% Completion & Escalation
+    TL ==>|"Reports completion"| PL
+    PL ==>|"3. Delivers completed project"| User
+
+    %% Direct entry point
+    User -.->|"Direct engineering mode"| TL
+```
+
+### Partitioned work storage & 300-line ceiling rule
+
+Project state lives under `.agents/work/<slug>/` in the consuming repository. To prevent context degradation and maintain modularity as projects scale:
+- **300-Line Ceiling**: No single Markdown file may exceed 300 lines. When an area grows beyond this threshold, it must be split into modular topic files (e.g. `spec.<area>.md` or `arch.<subsystem>.md`).
+- **Index-and-Topic Pattern**: Each domain folder contains a root index file (e.g., `req/requirements.md`, `spec/specification.md`, `arch/architecture.md`, `tasks/tasks.md`) that serves as a Table of Contents referencing topic files.
+- **Surgical Context Loading**: Agents load only the specific topic files needed for their assigned task rather than ingesting entire monolithic documents.
+
 ## Adding agents
 
 When adding a new agent:
@@ -65,12 +148,12 @@ When adding a new agent:
 | Agent | Purpose | Notes |
 | --- | --- | --- |
 | `assistant` | Persistent personal assistant that stores local memories of notable topics and recalls them first. | Uses the `assistant-memory` skill. Memories live under `~/.agents/assistant/memory/` (user) and `<repo>/.agents/assistant/memory/` (workspace). Recall searches and loads at most 4 topic files; cold topics move to `archive/`. Those paths are gitignored. |
-| `project-lead` | Collects, clarifies, and stores requirements; user-facing coordinator in the team loop. Never writes code. | Uses `software-team`. Writes `requirements.md` / `STATUS.md` under `.agents/work/<slug>/`, then hands off to `team-lead`. Can be invoked directly for product and scoping discussions. |
-| `team-lead` | Validates specs, reviews architecture and implementation, assigns work. Never writes code, architecture, or tests. | Uses `software-team`. Can be invoked directly as session lead (spawns workers, talks to user) or as a child agent under Project Lead (returns `## Next` assignments). |
-| `architect` | Extensible, loosely coupled architecture and stack recommendations. | Uses `software-team`. Writes architecture plans and designs; never production code. Can be invoked directly by the user or as a team worker. |
-| `coder` | Implements tasks with TDD and SOLID. | Uses `software-team`. Writes production code and automated tests. Can be invoked directly by the user for implementation tasks or assigned tasks from `tasks.md`. |
-| `frontend-engineer` | Implements UI/UX components, responsive styling, and accessibility. | Uses `software-team`. Writes production HTML, CSS/Tailwind, UI components, and component tests. Can be invoked directly by the user or assigned tasks from `tasks.md`. |
-| `tester` | Validates delivery against requirements and acceptance criteria. | Uses `software-team`. Produces validation reports and checks behavior. Can be invoked directly by the user or as a team worker reporting to Team Lead. |
+| `project-lead` | Collects, clarifies, and stores requirements; authors solution specs; user-facing coordinator in the team loop. Never writes code. | Uses `software-team`. Writes `STATUS.md`, `req/` requirements, and `spec/` solution specifications under `.agents/work/<slug>/`, then hands off to `team-lead`. Can be invoked directly for product and scoping discussions. |
+| `team-lead` | Validates specs, reviews architecture and implementation, assigns work. Never writes code, architecture, or tests. | Uses `software-team`. Manages `tasks/` and `reviews/`. Can be invoked directly as session lead (spawns workers, talks to user) or as a child agent under Project Lead (returns `## Next` assignments). |
+| `architect` | Extensible, loosely coupled architecture and stack recommendations. | Uses `software-team`. Writes architecture plans and designs under `arch/` (`architecture.md` and `arch.<subsystem>.md`); never production code. Can be invoked directly by the user or as a team worker. |
+| `coder` | Implements tasks with TDD and SOLID. | Uses `software-team`. Writes production code and automated tests. Reads `tasks/`, `spec/`, and `arch/`. Can be invoked directly by the user for implementation tasks or assigned tasks from `tasks/`. |
+| `frontend-engineer` | Implements UI/UX components, responsive styling, and accessibility. | Uses `software-team`. Writes production HTML, CSS/Tailwind, UI components, and component tests. Reads `tasks/`, `spec/`, and `arch/`. Can be invoked directly by the user or assigned tasks from `tasks/`. |
+| `tester` | Validates delivery against requirements and solution specs. | Uses `software-team`. Produces validation reports under `validation/` against `req/` and `spec/`. Can be invoked directly by the user or as a team worker reporting to Team Lead. |
 
 ## Adding skills
 

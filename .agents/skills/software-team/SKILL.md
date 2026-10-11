@@ -18,23 +18,36 @@ Shared contract for the software-team agents. Role behavior lives in each agent 
 
 ## Work directory
 
-Every piece of work uses one directory in the **consuming** project:
+Every piece of work uses one directory in the **consuming** project, partitioned into domain folders with a 300-line ceiling per file:
 
 ```text
 .agents/work/<slug>/
   STATUS.md
-  requirements.md
-  architecture.md
-  tasks.md
-  validation.md
+  req/
+    requirements.md
+    req.<area>.md
+  spec/
+    specification.md
+    spec.<area>.md
+  arch/
+    architecture.md
+    arch.<subsystem>.md
+  tasks/
+    tasks.md
+    tasks.<area>.md
   reviews/
-    architect.md
-    coder-<task-id>.md
-    frontend-engineer-<task-id>.md
-    tester.md
+    reviews.md
+    review.<owner>-<id>.md
+  validation/
+    validation.md
+    val.<area>.md
 ```
 
-`<slug>` is kebab-case, short, and stable for the life of the work. Project Lead creates the directory and `STATUS.md`. Do not invent a second tree.
+`<slug>` is kebab-case, short, and stable for the life of the work. Project Lead creates the work directory, `STATUS.md`, and initial `req/` and `spec/` files. Do not invent a second tree.
+
+### Document sizing rule (300-line ceiling)
+
+No single Markdown file may exceed 300 lines. When an area or topic grows, split it into modular files (`<folder>.<area>.md`) and keep the root file (`<folder>.md` or folder index) as a compact Table of Contents and routing index. Agents load only the specific topic files needed for their assigned task to keep context windows focused and efficient.
 
 ### `STATUS.md`
 
@@ -45,13 +58,13 @@ Every piece of work uses one directory in the **consuming** project:
 - Summary:
 ```
 
-`Phase` is exactly one of: `requirements`, `spec-validation`, `architecture`, `implementation`, `review`, `validation`, `complete`, `blocked`.
+`Phase` is exactly one of: `requirements`, `specification`, `spec-validation`, `architecture`, `implementation`, `review`, `validation`, `complete`, `blocked`.
 
 `Blocked-on` is empty unless `Phase` is `blocked`. Then it names who must act (`user`, `project-lead`, or an owner id).
 
-### `requirements.md`
+### `req/` — Requirements (Project Lead)
 
-Project Lead writes this. Every requirement has a stable id so Tester can map results.
+Project Lead writes `req/requirements.md` as the root index capturing user problem space, actors, constraints, and non-goals. Every requirement has a stable id (`R1`, `R2`, ...) so specification, tasks, and validation can map to it. Area-specific requirement details live in `req.<area>.md` (e.g. `req.auth.md`).
 
 ```markdown
 # <title>
@@ -66,18 +79,32 @@ Project Lead writes this. Every requirement has a stable id so Tester can map re
 ## Non-goals
 ```
 
-### `architecture.md`
+### `spec/` — Solution Specification (Project Lead)
 
-Architect writes this. Required sections: Context, Decisions (with stack choices), Module boundaries, Data flow, Interfaces, Testing strategy, Rollout, Open questions.
+Project Lead translates requirements into `spec/specification.md` (and `spec.<area>.md`), defining the concrete functional solution to be built (user workflows, domain models, screen/API expectations, error behavior, edge cases). Project Lead verifies this solution spec with the user before technical hand-off to Team Lead.
 
-### `tasks.md`
+```markdown
+# Solution Specification: <title>
+## Overview
+## User Workflows & Interactions
+## System Behaviors & Business Rules
+## Data Models & Entity Schemas
+## Interface & API Expectations
+## Requirement Mapping (R1..Rn -> Spec Sections)
+```
 
-Team Lead writes this after architecture is accepted.
+### `arch/` — Architecture (Architect)
+
+Architect writes `arch/architecture.md` (and `arch.<subsystem>.md` when subsystem depth exceeds 300 lines). Required sections: Context, Decisions (with stack choices), Module boundaries, Data flow, Interfaces, Testing strategy, Rollout, Open questions.
+
+### `tasks/` — Tasks (Team Lead)
+
+Team Lead writes `tasks/tasks.md` (and `tasks.<area>.md`) after architecture is accepted.
 
 ```markdown
 # Tasks
 ## T1: <title>
-- Owner: coder
+- Owner: coder | frontend-engineer | tester
 - Files:
 - Depends-on: none
 - Done-when:
@@ -85,9 +112,13 @@ Team Lead writes this after architecture is accepted.
 
 `Owner` is `coder`, `frontend-engineer`, or `tester`. `Depends-on` is `none` or other task ids. `Files` is the intended path list; keep parallel coder and frontend-engineer tasks' file lists disjoint.
 
-### `validation.md`
+### `reviews/` — Reviews (Team Lead)
 
-Tester writes this.
+Team Lead maintains `reviews/reviews.md` as an open/fixed issue tracker and writes review notes into `reviews/review.<owner>-<id>.md` (e.g. `review.coder-T1.md`, `review.arch.md`).
+
+### `validation/` — Validation (Tester)
+
+Tester writes `validation/validation.md` as the compliance matrix against `req/` requirements, with detailed test evidence and inspection notes in `val.<area>.md`.
 
 ```markdown
 # Validation
@@ -96,19 +127,20 @@ Tester writes this.
 - Gaps:
 ```
 
-One heading per requirement id from `requirements.md`. Evidence is a command and its result, or a concrete inspection note.
+One heading per requirement id from `req/requirements.md`. Evidence is a command and its result, or a concrete inspection note.
 
 ## Phases
 
 Drive in this order. Do not skip ahead.
 
-1. `requirements` — Project Lead writes `requirements.md`.
-2. `spec-validation` — Team Lead checks the spec against the codebase. Gaps → `blocked` and back to Project Lead. No architecture until the spec is confirmed.
-3. `architecture` — Architect writes `architecture.md`. Team Lead reviews into `reviews/architect.md` until no open critical/major issues.
-4. `implementation` — Coders and Frontend Engineers (and Tester, when a task's Owner is `tester`) execute `tasks.md`.
-5. `review` — Team Lead reviews each owner's diff into `reviews/<owner>.md`. Open critical/major issues return to that owner.
-6. `validation` — Tester checks the result against `requirements.md`, not against the architecture story.
-7. `complete` — every requirement is `pass` **and** no Team Lead review issue is open at critical/major. Team Lead sets `Phase: complete`. Project Lead tells the user.
+1. `requirements` — Project Lead interviews user and writes `req/requirements.md` (and `req.<area>.md`).
+2. `specification` — Project Lead translates requirements into functional solution design in `spec/specification.md` (and `spec.<area>.md`), confirmed with user.
+3. `spec-validation` — Team Lead checks the spec against the codebase for feasibility and gaps. Gaps → `blocked` and back to Project Lead. No architecture until the spec is confirmed.
+4. `architecture` — Architect writes `arch/architecture.md` (and `arch.<subsystem>.md`). Team Lead reviews into `reviews/` until no open critical/major issues.
+5. `implementation` — Team Lead writes `tasks/tasks.md`. Coders and Frontend Engineers (and Tester, when a task's Owner is `tester`) execute tasks.
+6. `review` — Team Lead reviews each owner's diff into `reviews/`. Open critical/major issues return to that owner.
+7. `validation` — Tester checks the result against `req/requirements.md` and `spec/`, recording evidence in `validation/`.
+8. `complete` — every requirement is `pass` **and** no Team Lead review issue is open at critical/major. Team Lead sets `Phase: complete`. Project Lead tells the user.
 
 `blocked` can replace any in-progress phase while waiting on the user. Resume the phase that was interrupted.
 
