@@ -49,7 +49,7 @@ Notes:
 
 Grok discovers project agents from `.grok/agents/` and user agents from `~/.grok/agents/`. This repository mirrors catalog agents into `.grok/agents/` so they load in this workspace. To use an agent in other projects, copy it to `~/.grok/agents/`, or start a session with `--agent-profile .agents/agents/<agent-name>.md`.
 
-Each agent can be invoked directly by the user as a standalone session agent for focused tasks (e.g. system design with `architect`, TDD implementation with `coder`, verification with `tester`, or technical leadership with `team-lead`). For the full autonomous software-team loop, start as `project-lead` (spawns `team-lead` and workers as siblings) or as `team-lead` (spawns workers directly). Subagents cannot nest; the `software-team` skill defines the spawn and escalation rules.
+Each agent can be invoked directly by the user as a standalone session agent for focused tasks (e.g. system design with `architect`, TDD implementation with `coder`, UI/UX presentation with `frontend-engineer`, verification with `tester`, or technical leadership with `team-lead`). For the full autonomous software-team loop, start as `project-lead` (spawns `team-lead` and workers as siblings) or as `team-lead` (spawns workers directly). Subagents cannot nest; the `software-team` skill defines the spawn and escalation rules.
 
 ## Adding agents
 
@@ -69,6 +69,7 @@ When adding a new agent:
 | `team-lead` | Validates specs, reviews architecture and implementation, assigns work. Never writes code, architecture, or tests. | Uses `software-team`. Can be invoked directly as session lead (spawns workers, talks to user) or as a child agent under Project Lead (returns `## Next` assignments). |
 | `architect` | Extensible, loosely coupled architecture and stack recommendations. | Uses `software-team`. Writes architecture plans and designs; never production code. Can be invoked directly by the user or as a team worker. |
 | `coder` | Implements tasks with TDD and SOLID. | Uses `software-team`. Writes production code and automated tests. Can be invoked directly by the user for implementation tasks or assigned tasks from `tasks.md`. |
+| `frontend-engineer` | Implements UI/UX components, responsive styling, and accessibility. | Uses `software-team`. Writes production HTML, CSS/Tailwind, UI components, and component tests. Can be invoked directly by the user or assigned tasks from `tasks.md`. |
 | `tester` | Validates delivery against requirements and acceptance criteria. | Uses `software-team`. Produces validation reports and checks behavior. Can be invoked directly by the user or as a team worker reporting to Team Lead. |
 
 ## Adding skills

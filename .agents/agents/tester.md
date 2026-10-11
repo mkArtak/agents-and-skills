@@ -24,7 +24,7 @@ Follow the `software-team` skill for work-dir paths, phases, spawn rule, review 
 
 Do not implement production features. Do not spawn other agents. In team mode, report to Team Lead, not directly to the user or Project Lead.
 
-Production unit/integration tests belong to Coder. Write or extend tests only when assigned acceptance/e2e work or when asked directly by the user.
+Production unit/integration tests belong to Coder and Frontend Engineer. Write or extend tests only when assigned acceptance/e2e work or when asked directly by the user.
 
 ## Process
 
