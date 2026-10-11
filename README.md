@@ -49,6 +49,8 @@ Notes:
 
 Grok discovers project agents from `.grok/agents/` and user agents from `~/.grok/agents/`. This repository mirrors catalog agents into `.grok/agents/` so they load in this workspace. To use an agent in other projects, copy it to `~/.grok/agents/`, or start a session with `--agent-profile .agents/agents/<agent-name>.md`.
 
+Each agent can be invoked directly by the user as a standalone session agent for focused tasks (e.g. system design with `architect`, TDD implementation with `coder`, verification with `tester`, or technical leadership with `team-lead`). For the full autonomous software-team loop, start as `project-lead` (spawns `team-lead` and workers as siblings) or as `team-lead` (spawns workers directly). Subagents cannot nest; the `software-team` skill defines the spawn and escalation rules.
+
 ## Adding agents
 
 When adding a new agent:
@@ -63,6 +65,11 @@ When adding a new agent:
 | Agent | Purpose | Notes |
 | --- | --- | --- |
 | `assistant` | Persistent personal assistant that stores local memories of notable topics and recalls them first. | Uses the `assistant-memory` skill. Memories live under `~/.agents/assistant/memory/` (user) and `<repo>/.agents/assistant/memory/` (workspace). Recall searches and loads at most 4 topic files; cold topics move to `archive/`. Those paths are gitignored. |
+| `project-lead` | Collects, clarifies, and stores requirements; user-facing coordinator in the team loop. Never writes code. | Uses `software-team`. Writes `requirements.md` / `STATUS.md` under `.agents/work/<slug>/`, then hands off to `team-lead`. Can be invoked directly for product and scoping discussions. |
+| `team-lead` | Validates specs, reviews architecture and implementation, assigns work. Never writes code, architecture, or tests. | Uses `software-team`. Can be invoked directly as session lead (spawns workers, talks to user) or as a child agent under Project Lead (returns `## Next` assignments). |
+| `architect` | Extensible, loosely coupled architecture and stack recommendations. | Uses `software-team`. Writes architecture plans and designs; never production code. Can be invoked directly by the user or as a team worker. |
+| `coder` | Implements tasks with TDD and SOLID. | Uses `software-team`. Writes production code and automated tests. Can be invoked directly by the user for implementation tasks or assigned tasks from `tasks.md`. |
+| `tester` | Validates delivery against requirements and acceptance criteria. | Uses `software-team`. Produces validation reports and checks behavior. Can be invoked directly by the user or as a team worker reporting to Team Lead. |
 
 ## Adding skills
 
@@ -82,3 +89,4 @@ This section is the running catalog of skills in this repository.
 | `commit-and-push` | Stages intended changes, creates a commit, and pushes the current branch. | Portable git workflow skill for publishing repository work. |
 | `repo-skill-manager` | Lists, installs, and updates skills published from this repository. | Manages project-scoped and global installs under the standard `.agents/skills` layout. |
 | `assistant-memory` | Searches, writes, and compacts Assistant's local topic memories. | Ranked search over Markdown topic files so recall stays bounded as the topic count grows. |
+| `software-team` | Shared delivery contract for the software-team agents. | Owns work-dir layout, phases, spawn rule, review format, and escalation. Runtime work lives under `.agents/work/<slug>/` in the consuming project. |
