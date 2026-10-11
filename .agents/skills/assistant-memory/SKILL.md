@@ -1,23 +1,23 @@
 ---
 name: assistant-memory
-description: Search, write, and compact the Assistant agent's local Markdown memory stores. Use when recalling prior topics, saving a notable fact, forgetting a memory, or maintaining Assistant topic files as the memory set grows.
-compatibility: Requires Node.js 18+. Reads and writes local files under .memory/assistant and ~/.memory/assistant.
+description: Search, write, and compact local Markdown memory stores for Assistant and specialized subagents. Use when recalling prior topics, saving a notable fact, forgetting a memory, or maintaining agent topic files as the memory set grows.
+compatibility: Requires Node.js 18+. Reads and writes local files under .memory/<agent> and ~/.memory/<agent> (defaults to assistant).
 metadata:
   author: mkArtak
-  version: "1.2"
+  version: "1.3"
   source-repository: mkArtak/agent-skills
   source-path: .agents/skills/assistant-memory
 ---
 
-Manage Assistant's local topic memories so recall stays cheap as the number of topics grows.
+Manage local topic memories for Assistant and specialized subagents (`--agent <name>`) so recall stays cheap as the number of topics grows.
 
 ## Stores
 
-- **Workspace:** `<git-root>/.memory/assistant/` (skip if not in a git repo)
-- **User:** `~/.memory/assistant/` (Windows: `%USERPROFILE%\.memory\assistant`)
+- **Workspace:** `<git-root>/.memory/<agent>/` (defaults to `assistant`; skip if not in a git repo)
+- **User:** `~/.memory/<agent>/` (Windows: `%USERPROFILE%\.memory\<agent>`)
 
 ```text
-.memory/assistant/
+.memory/<agent>/
   INDEX.md
   topics/<slug>.md
   archive/<YYYY>/<slug>.md
@@ -41,10 +41,10 @@ Do not commit memory files. Do not store secrets, passwords, API keys, or tokens
 Prefer:
 
 ```bash
-node scripts/memory.js search "<query>" --json --limit 4
+node scripts/memory.js search "<query>" --agent <name> --json --limit 4
 ```
 
-If there are no useful hits, retry once with `--archive`.
+(Omit `--agent` or set `--agent assistant` for Assistant's store). If there are no useful hits, retry once with `--archive`.
 
 Resolve the script from the first path that exists:
 
@@ -119,6 +119,6 @@ Forget by deleting or editing the matching facts. If the topic is empty afterwar
 ## Other script commands
 
 ```bash
-node scripts/memory.js list --json
-node scripts/memory.js stats --json
+node scripts/memory.js list --agent <name> --json
+node scripts/memory.js stats --agent <name> --json
 ```

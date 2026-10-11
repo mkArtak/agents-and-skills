@@ -47,7 +47,15 @@ Notes:
 - The markdown body is the agent's system prompt.
 - Keep the prompt focused on behavior the default agent does not already have.
 
-Grok discovers project agents from `.grok/agents/` and user agents from `~/.grok/agents/`. This repository mirrors catalog agents into `.grok/agents/` so they load in this workspace. To use an agent in other projects, copy it to `~/.grok/agents/`, or start a session with `--agent-profile .agents/agents/<agent-name>.md`.
+### Cross-Harness Support (Antigravity, Grok, Claude, GitHub Copilot)
+
+This repository serves as the single source of truth for custom agents designed to run across multiple AI harnesses:
+- **Antigravity**: Discovers custom agents directly from `.agents/agents/` in the project root, or globally from `~/.agents/agents/` and `~/.gemini/config/agents/`.
+- **Grok (`grok-build`)**: Discovers project agents from `.grok/agents/` and user agents from `~/.grok/agents/`.
+- **Claude (Claude Code)**: Discovers project subagents from `.claude/agents/` and user subagents from `~/.claude/agents/`.
+- **GitHub Copilot**: Discovers project custom agents from `.github/agents/`.
+
+All custom agents are mirrored across `.agents/agents/`, `.grok/agents/`, `.claude/agents/`, and `.github/agents/` so they are immediately accessible in whichever harness or tool you run.
 
 Each agent can be invoked directly by the user as a standalone session agent for focused tasks (e.g. system design with `architect`, TDD implementation with `coder`, UI/UX presentation with `frontend-engineer`, verification with `tester`, or technical leadership with `team-lead`). For the full autonomous software-team loop, start as `project-lead` (spawns `team-lead` and workers as siblings) or as `team-lead` (spawns workers directly). Subagents cannot nest; the `software-team` skill defines the spawn and escalation rules.
 
@@ -139,7 +147,7 @@ Project state lives under `.agents/work/<slug>/` in the consuming repository. To
 When adding a new agent:
 
 1. Create `.agents/agents/<agent-name>.md` with valid frontmatter and a focused prompt body.
-2. Mirror the same file to `.grok/agents/<agent-name>.md` so Grok can load it in this workspace.
+2. Mirror the same file to `.grok/agents/<agent-name>.md`, `.claude/agents/<agent-name>.md`, and `.github/agents/<agent-name>.md` so all harnesses can discover and run it.
 3. Add a row to the Agents index below.
 4. Keep personal runtime data (memories, logs) out of git.
 
