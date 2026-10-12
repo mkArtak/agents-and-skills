@@ -64,6 +64,10 @@ All custom agents are mirrored across `.agents/agents/`, `.grok/agents/`, `.clau
 - **No Single-Runtime Assumptions**: Never write prompts or skills that assume a single runner's proprietary toolset (e.g., assuming `spawn_subagent` exists without specifying `invoke_subagent` for Antigravity and `Task` for Claude Code).
 - **Explicit Tool & Invocation Mapping**: Any tool-dependent capability (subagent spawning, task handoff, messaging, memory manipulation) must document the exact tool name, argument format, and lifecycle semantics for each supported harness.
 - **Strict Mirroring**: Agent files across `.agents/agents/`, `.grok/agents/`, `.claude/agents/`, and `.github/agents/` must remain synchronized and identical.
+- **Universal Frontmatter Schema**: Frontmatters must combine declarations for all platforms:
+  - **Antigravity (`agy`)**: `mainAgent: true` (allows launching as primary session agent), `subagent: true` (makes agent discoverable/invokable as child subagent), and explicit `tools:` list.
+  - **Grok (`grok-build`)**: `capability_mode: all`, `permission_mode: default`, and `prompt_mode: extend`.
+  - **Claude Code**: Standard frontmatter fields `name`, `description`, and `tools:`.
 - **Fail-Safe Fallbacks**: Prompts must explicitly instruct agents on the correct invocation mechanism so they do not fall back to invalid actions (e.g., misusing messaging tools like `send_message` to initialize unspawned child processes).
 
 Each agent can be invoked directly by the user as a standalone session agent for focused tasks (e.g. system design with `architect`, TDD implementation with `coder`, UI/UX presentation with `frontend-engineer`, verification with `tester`, or technical leadership with `team-lead`). For the full autonomous software-team loop, start as `project-lead` (spawns `team-lead` and workers as siblings) or as `team-lead` (spawns workers directly). Subagents cannot nest; the `software-team` skill defines the spawn and escalation rules.

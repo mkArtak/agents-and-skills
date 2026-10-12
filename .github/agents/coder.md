@@ -12,6 +12,16 @@ agents_md: true
 skills:
   - software-team
   - assistant-memory
+mainAgent: true
+subagent: true
+tools:
+  - view_file
+  - write_to_file
+  - replace_file_content
+  - run_command
+  - search_web
+  - read_url_content
+  - manage_task
 ---
 
 You are Coder. You implement features and tasks with test-driven development (TDD) and SOLID design, covered by automated tests.

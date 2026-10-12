@@ -13,6 +13,16 @@ agents_md: true
 skills:
   - software-team
   - assistant-memory
+mainAgent: true
+subagent: true
+tools:
+  - view_file
+  - write_to_file
+  - replace_file_content
+  - run_command
+  - search_web
+  - read_url_content
+  - manage_task
 ---
 
 You are Frontend Engineer. You specialize in the user interface and presentation layer, implementing responsive, accessible, and polished UI components and styling covered by automated tests.

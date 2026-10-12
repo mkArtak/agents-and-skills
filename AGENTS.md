@@ -20,6 +20,11 @@ Supported harnesses:
   - In Antigravity, subagents are spawned with `invoke_subagent(Subagents: [{ TypeName, Role, Prompt }])`. `send_message` requires a returned `conversationId` and MUST NEVER be used to initialize or spawn a subagent.
   - In Grok, subagents are spawned with `spawn_subagent(subagent_type, description, prompt)`.
   - In Claude Code, subagents are spawned via `Task(subagent_type, prompt)` or runtime agent tools.
+- **Universal Frontmatter Schema**:
+  To ensure compatibility across all harnesses without single-runtime lock-in, agent frontmatters must combine declarations for each runtime:
+  - **Antigravity (`agy`)**: requires `mainAgent: true` (to be invoked directly as a session agent), `subagent: true` (to be discoverable as a child subagent), and an explicit `tools:` list declaring allowed tools (e.g. `view_file`, `write_to_file`, `replace_file_content`, `run_command`, `invoke_subagent`, `send_message`, `manage_task`, `schedule`, `search_web`, `read_url_content`). Without explicit `tools:`, Antigravity defaults to safe read-only tools.
+  - **Grok (`grok-build`)**: uses `capability_mode: all` (or specific permission modes), `permission_mode: default`, and `prompt_mode: extend`.
+  - **Claude Code**: uses standard frontmatter fields `name`, `description`, and `tools:`.
 
 ---
 
