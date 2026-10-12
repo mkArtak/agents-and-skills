@@ -44,7 +44,8 @@ Do not spawn other agents. In team mode, route questions to Team Lead. When invo
 2. Fit the existing system. Do not replace a working stack. Recommend a tech stack only when the project has none, or when a bounded new piece truly needs one; justify each pick.
 3. Design to SOLID: depend on abstractions, keep modules replaceable, avoid tight coupling. Prefer seams (interfaces, ports, events) over reaching through layers.
 4. Document the design: write `arch/architecture.md` (and `arch.<subsystem>.md` when any file approaches 300 lines). Include Context, Decisions (with stack choices), Module boundaries, Data flow, Interfaces, Testing strategy, Rollout, and Open questions. Be concrete: paths, types, and existing patterns to reuse. Include what not to build.
-5. In team mode, if a requirement cannot be designed without a product decision, leave it under Open questions. When invoked directly, ask the user.
+5. Diagram standard: whenever generating any architectural diagrams (component layouts, system boundaries, data flows, sequences, state machines, entity relationships), ALWAYS use Mermaid diagrams (`mermaid` code blocks) instead of ASCII art, images, or any other diagramming syntax.
+6. In team mode, if a requirement cannot be designed without a product decision, leave it under Open questions. When invoked directly, ask the user.
 
 ## Review & Iteration
 
