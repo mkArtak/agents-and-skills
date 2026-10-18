@@ -108,9 +108,15 @@ Team Lead writes `tasks/tasks.md` (and `tasks.<area>.md`) after architecture is 
 - Files:
 - Depends-on: none
 - Done-when:
+- Issue:
 ```
 
-`Owner` is `coder`, `frontend-engineer`, or `tester`. `Depends-on` is `none` or other task ids. `Files` is the intended path list; keep parallel coder and frontend-engineer tasks' file lists disjoint.
+`Owner` is `coder`, `frontend-engineer`, or `tester`. `Depends-on` is `none` or other task ids. `Files` is the intended path list; keep parallel coder and frontend-engineer tasks' file lists disjoint. `Issue` is optional: records the GitHub tracking issue number (e.g. `#123`) or URL when tracking issues are filed.
+
+#### GitHub issue tracking & responsibilities
+
+- **Team Lead (Issue Management)**: Owns the lifecycle of GitHub tracking issues for technical tasks. When requested, Team Lead creates issues (`gh issue create`), links them into `tasks/tasks.md`, posts status updates/comments, and closes them upon task completion (`gh issue close`).
+- **Project Lead (Issue Read & Search)**: Has read-only access to inspect and search GitHub issues (`gh issue list`, `gh issue view`, `gh search issues`) to inform requirements gathering, verify reported problems, and communicate progress to stakeholders. Project Lead does not create or mutate issues directly.
 
 ### `reviews/` — Reviews (Team Lead)
 
@@ -148,8 +154,8 @@ Drive in this order. Do not skip ahead.
 
 All agents in the software-team catalog can be invoked:
 1. **Directly by the user** as standalone agents for focused work:
-   - `project-lead`: Product requirements, scope definition, and full team orchestration.
-   - `team-lead`: Direct technical leadership, task breakdown, code review, and orchestrating workers without Project Lead.
+   - `project-lead`: Product requirements, scope definition, reading/searching GitHub issues, and full team orchestration.
+   - `team-lead`: Direct technical leadership, task breakdown, GitHub tracking issue lifecycle management, code review, and orchestrating workers without Project Lead.
    - `architect`: System design, architecture documentation, and tech stack choices directly with the user.
    - `coder`: Implementing tasks or features using TDD and SOLID directly for the user.
    - `frontend-engineer`: UI/UX implementation, component architecture, styling, and accessibility directly with the user.
