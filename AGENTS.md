@@ -46,4 +46,6 @@ Supported harnesses:
   - `tasks/`: implementation tasks authored by Team Lead.
   - `reviews/`: code and architecture reviews authored by Team Lead.
   - `validation/`: acceptance reports authored by Tester.
+- Dynamic custom agents: created on-demand by Project Lead when specialized skills are needed, strictly mirrored across all four harnesses, and managed by Team Lead in `tasks/` and `reviews/`.
 - Persistent agent memory lives under `.memory/<agent-name>/` (workspace) and `~/.memory/<agent-name>/` (user).
+- Portfolio registry: maintained by `assistant` under `.memory/assistant/projects.json` in the assistant setup directory for multi-project routing and on-demand repository bootstrapping.

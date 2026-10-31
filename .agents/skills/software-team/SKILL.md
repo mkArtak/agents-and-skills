@@ -122,6 +122,20 @@ Team Lead writes `tasks/tasks.md` (and `tasks.<area>.md`) after architecture is 
 
 Team Lead maintains `reviews/reviews.md` as an open/fixed issue tracker and writes review notes into `reviews/review.<owner>-<id>.md` (e.g. `review.coder-T1.md`, `review.arch.md`).
 
+## Dynamic on-demand custom agents
+
+Projects often require specialized technical skills beyond the default team (`architect`, `coder`, `frontend-engineer`, `tester`). When a domain-specific capability is needed (e.g. `devops-engineer`, `database-engineer`, `security-specialist`, `mobile-engineer`):
+
+1. **Role Identification & Definition (Project Lead)**:
+   - Project Lead identifies the specialized need during requirements or spec definition.
+   - Project Lead authors the new agent file in `.agents/agents/<name>.md` with universal frontmatter (`name`, `description`, `mainAgent: true`, `subagent: true`, explicit `tools`, `skills`, cross-harness tags).
+   - System prompt defines role boundaries, deliverable expectations, and durable memory under `.memory/<name>/` (max 300 lines).
+2. **Universal 4-Way Mirroring**:
+   - The new agent file must immediately be mirrored across all 4 harnesses: `.agents/agents/<name>.md`, `.claude/agents/<name>.md`, `.grok/agents/<name>.md`, and `.github/agents/<name>.md`.
+3. **Management Handoff to Team Lead**:
+   - Project Lead introduces the new role to Team Lead.
+   - Team Lead assigns implementation tasks to the new agent in `tasks/tasks.md` (`- Owner: <name>`), reviews diffs into `reviews/review.<name>-<id>.md`, and coordinates execution just like standard workers.
+
 ### `validation/` — Validation (Tester)
 
 Tester writes `validation/validation.md` as the compliance matrix against `req/` requirements, with detailed test evidence and inspection notes in `val.<area>.md`.

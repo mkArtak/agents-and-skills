@@ -65,27 +65,25 @@ All custom agents are mirrored across `.agents/agents/`, `.grok/agents/`, `.clau
 - **Explicit Tool & Invocation Mapping**: Any tool-dependent capability (subagent spawning, task handoff, messaging, memory manipulation) must document the exact tool name, argument format, and lifecycle semantics for each supported harness.
 - **Strict Mirroring**: Agent files across `.agents/agents/`, `.grok/agents/`, `.claude/agents/`, and `.github/agents/` must remain synchronized and identical.
 - **Universal Frontmatter Schema**: Frontmatters must combine declarations for all platforms:
-  - **Antigravity (`agy`)**: `mainAgent: true` (allows launching as primary session agent), `subagent: true` (makes agent discoverable/invokable as child subagent), and explicit `tools:` list.
+  - **Antigravity (`agy`)**: `mainAgent: true`, `subagent: true`, and explicit `tools:` list.
   - **Grok (`grok-build`)**: `capability_mode: all`, `permission_mode: default`, and `prompt_mode: extend`.
   - **Claude Code**: Standard frontmatter fields `name`, `description`, and `tools:`.
 - **Fail-Safe Fallbacks**: Prompts must explicitly instruct agents on the correct invocation mechanism so they do not fall back to invalid actions (e.g., misusing messaging tools like `send_message` to initialize unspawned child processes).
 
-Each agent can be invoked directly by the user as a standalone session agent for focused tasks (e.g. system design with `architect`, TDD implementation with `coder`, UI/UX presentation with `frontend-engineer`, verification with `tester`, or technical leadership with `team-lead`). For the full autonomous software-team loop, start as `project-lead` (spawns `team-lead` and workers as siblings) or as `team-lead` (spawns workers directly). Subagents cannot nest; the `software-team` skill defines the spawn and escalation rules.
-
 ## Development contact model & partitioned storage
 
-When driving project development with the agent team, interaction follows a two-tier contact model paired with a partitioned, index-driven storage structure:
+When driving work across projects, interaction follows a hierarchical model paired with partitioned storage:
 
-1. **User $\leftrightarrow$ Project Lead (Product & Solution Scope)**:
-   - **Project Lead** is the primary contact point for the user. It interviews the user, captures needs under `req/`, translates them into a concrete functional solution specification under `spec/`, and confirms the spec with the user before engineering begins.
-   - Shields the user from technical implementation noise while escalating product decisions, edge-case trade-offs, and status.
-2. **Project Lead $\to$ Team Lead (Technical Handoff & Spec Validation)**:
-   - Once confirmed, Project Lead hands the solution specification to **Team Lead**, who validates feasibility against the codebase before commissioning architecture or tasks.
-3. **Team Lead $\leftrightarrow$ Workers (Engineering Execution & Reviews)**:
-   - Team Lead directs specialized workers (**Architect**, **Coder**, **Frontend Engineer**, **Tester**) via task assignments under `tasks/` and diff reviews under `reviews/`.
-   - Workers report exclusively to Team Lead (and cross-consult Architect on design questions). Tester validates the delivered implementation against `req/` and `spec/` into `validation/`.
-4. **Direct / Engineering-only Mode**:
-   - The user can bypass Project Lead and drive work directly with **Team Lead** for pure technical initiatives, or invoke any individual agent 1:1 for standalone tasks.
+1. **User $\leftrightarrow$ Assistant (Portfolio Orchestration & Recall)**:
+   - **Assistant** is the persistent companion operating from the user-defined root or portfolio directory. It maintains the portfolio registry in `.memory/assistant/projects.json` within its setup folder structure, bootstraps new repositories with multi-harness agent setups on demand, and delegates project initiatives to each repository's `project-lead`.
+2. **Assistant / User $\leftrightarrow$ Project Lead (Product & Solution Scope)**:
+   - **Project Lead** owns requirements and solution specifications (`req/`, `spec/`) for a single repository. When a project demands specialized skills, Project Lead creates and mirrors on-demand custom agents (e.g. `devops-engineer`, `database-engineer`), then hands technical execution to **Team Lead**.
+3. **Project Lead $\to$ Team Lead (Technical Handoff & Spec Validation)**:
+   - Team Lead validates feasibility against the codebase, decomposes tasks into `tasks/`, manages GitHub tracking issues, and orchestrates workers.
+4. **Team Lead $\leftrightarrow$ Workers (Engineering Execution & Reviews)**:
+   - Team Lead directs standard workers (**Architect**, **Coder**, **Frontend Engineer**, **Tester**) and any **Dynamic Custom Agents**, reviewing diffs under `reviews/`.
+5. **Direct Mode**:
+   - The user can interact directly with any agent 1:1 for standalone tasks.
 
 ### Contact and storage model diagram
 
@@ -93,8 +91,13 @@ When driving project development with the agent team, interaction follows a two-
 flowchart TD
     User(["👤 User / Stakeholder"])
 
-    subgraph Coordination ["Leadership & Coordination"]
-        PL["🎯 Project Lead<br/><i>Customer interface, requirements & solution spec</i>"]
+    subgraph Portfolio ["Portfolio / Assistant Setup Root"]
+        AST["🧠 Assistant<br/><i>Portfolio orchestrator, registry & bootstrapping</i>"]
+        PORT_MEM[("🗄️ .memory/assistant/<br/>projects.json & topics/")]
+    end
+
+    subgraph Coordination ["Project-Level Coordination (per repo)"]
+        PL["🎯 Project Lead<br/><i>Requirements, spec & custom agent creation</i>"]
         TL["🧭 Team Lead<br/><i>Technical validation, task breakdown & reviews</i>"]
     end
 
@@ -111,30 +114,32 @@ flowchart TD
         end
     end
 
-    subgraph Execution ["Specialized Engineering Team"]
+    subgraph Execution ["Engineering Team"]
         ARCH["📐 Architect"]
         CODE["💻 Coder"]
         FE["🎨 Frontend Engineer"]
         TEST["🧪 Tester"]
+        CUSTOM["🧩 Dynamic Custom Agents<br/><i>(devops, security, db, etc.)</i>"]
     end
 
-    %% User Interaction & Spec Definition
-    User <==>|"1. Elicits requirements & validates solution"| PL
+    %% Portfolio & User Flow
+    User <==>|"1. Portfolio queries, new repos, or tasks"| AST
+    AST <--> PORT_MEM
+    AST ==>|"2. Delegates repo initiative"| PL
+    User -.->|"Direct interaction"| PL
+
+    %% Requirements & Specs
     PL -->|"Writes & indexes"| REQ
     PL -->|"Translates & indexes"| SPEC
+    PL ==>|"Hands off spec & custom roles"| TL
 
-    %% Hand-off to Team Lead
-    PL ==>|"2. Hands off validated spec"| TL
-    TL -->|"Validates spec feasibility"| SPEC
-
-    %% Technical Execution & Authoring
+    %% Technical Execution
+    TL -->|"Validates spec"| SPEC
     TL -->|"Assigns arch"| ARCH
     ARCH -->|"Writes & indexes"| ARCH_S
-
     TL -->|"Breaks down tasks"| TASKS_S
-    TL -->|"Assigns tasks"| CODE & FE
-    CODE & FE -.->|"Reads slice"| SPEC & ARCH_S
-
+    TL -->|"Assigns tasks"| CODE & FE & CUSTOM
+    CODE & FE & CUSTOM -.->|"Reads slice"| SPEC & ARCH_S
     TL -->|"Reviews diffs"| REVIEWS_S
     TL -->|"Assigns acceptance"| TEST
     TEST -->|"Writes evidence"| VAL_S
@@ -142,9 +147,8 @@ flowchart TD
 
     %% Completion & Escalation
     TL ==>|"Reports completion"| PL
-    PL ==>|"3. Delivers completed project"| User
-
-    %% Direct entry point
+    PL ==>|"Delivers completed initiative"| AST
+    AST ==>|"3. Delivers completed project/status"| User
     User -.->|"Direct engineering mode"| TL
 ```
 
@@ -167,16 +171,15 @@ When adding a new agent:
 
 ## Agents index
 
-
 | Agent | Purpose | Notes |
 | --- | --- | --- |
-| `assistant` | Persistent personal assistant that stores local memories of notable topics and recalls them first. | Uses the `assistant-memory` skill. Memories live under `~/.memory/assistant/` (user) and `<repo>/.memory/assistant/` (workspace). Recall searches and loads at most 4 topic files; cold topics move to `archive/`. Those paths are gitignored. |
-| `project-lead` | Collects, clarifies, and stores requirements; reads and searches GitHub issues; user-facing coordinator in the team loop. Never writes code. | Uses `software-team`. Writes `STATUS.md`, `req/` requirements, and `spec/` solution specifications under `.agents/work/<slug>/`, inspects existing GitHub issues, then hands off to `team-lead`. Can be invoked directly for product and scoping discussions. |
-| `team-lead` | Validates specs, reviews architecture and implementation, manages GitHub tracking issues, assigns work. Never writes code, architecture, or tests. | Uses `software-team`. Manages `tasks/`, `reviews/`, and GitHub issue lifecycle for technical tasks. Can be invoked directly as session lead (spawns workers, talks to user) or as a child agent under Project Lead (returns `## Next` assignments). |
-| `architect` | Extensible, loosely coupled architecture and stack recommendations. | Uses `software-team`. Writes architecture plans and designs under `arch/` (`architecture.md` and `arch.<subsystem>.md`); never production code. Can be invoked directly by the user or as a team worker. |
-| `coder` | Implements tasks with TDD and SOLID. | Uses `software-team`. Writes production code and automated tests. Reads `tasks/`, `spec/`, and `arch/`. Can be invoked directly by the user for implementation tasks or assigned tasks from `tasks/`. |
-| `frontend-engineer` | Implements UI/UX components, responsive styling, and accessibility. | Uses `software-team`. Writes production HTML, CSS/Tailwind, UI components, and component tests. Reads `tasks/`, `spec/`, and `arch/`. Can be invoked directly by the user or assigned tasks from `tasks/`. |
-| `tester` | Validates delivery against requirements and solution specs. | Uses `software-team`. Produces validation reports under `validation/` against `req/` and `spec/`. Can be invoked directly by the user or as a team worker reporting to Team Lead. |
+| `assistant` | Persistent personal assistant & portfolio orchestrator. Tracks user projects, bootstraps repos, and recalls topics. | Uses `assistant-memory` and `project-bootstrap`. Maintains project registry in `.memory/assistant/projects.json` and topic memories within its setup folder structure. Delegates project tasks to `project-lead`. |
+| `project-lead` | Collects, clarifies, and stores requirements; creates on-demand custom agents; reads GitHub issues; coordinates team loop. | Uses `software-team`. Writes `STATUS.md`, `req/`, and `spec/` under `.agents/work/<slug>/`. Creates and mirrors custom agents when needed. Hands off technical work to `team-lead`. |
+| `team-lead` | Validates specs, reviews architecture/code, manages GitHub issues, assigns work to workers and custom agents. | Uses `software-team`. Manages `tasks/`, `reviews/`, and GitHub issue lifecycle. Directs `architect`, `coder`, `frontend-engineer`, `tester`, and any on-demand custom agents. |
+| `architect` | Extensible, loosely coupled architecture and stack recommendations. | Uses `software-team`. Writes architecture plans and designs under `arch/` (`architecture.md` and `arch.<subsystem>.md`) with Mermaid diagrams; never production code. |
+| `coder` | Implements tasks with TDD and SOLID. | Uses `software-team`. Writes production code and automated tests. Reads `tasks/`, `spec/`, and `arch/`. |
+| `frontend-engineer` | Implements UI/UX components, responsive styling, and accessibility. | Uses `software-team`. Writes production HTML, CSS/Tailwind, UI components, and component tests. Meets WCAG 2.1 AA. |
+| `tester` | Validates delivery against requirements and solution specs. | Uses `software-team`. Produces validation reports under `validation/` against `req/` and `spec/`. |
 
 ## Adding skills
 
@@ -194,7 +197,8 @@ This section is the running catalog of skills in this repository.
 
 | Skill | Purpose | Notes |
 | --- | --- | --- |
+| `project-bootstrap` | Maintains portfolio registry (`projects.json`) and bootstraps new repositories with mirrored agent scaffolding. | Provides `scripts/portfolio.js` CLI for listing, adding, and bootstrapping project repositories. |
 | `commit-and-push` | Stages intended changes, creates a commit, and pushes the current branch. | Portable git workflow skill for publishing repository work. |
 | `repo-skill-manager` | Lists, installs, and updates skills published from this repository. | Manages project-scoped and global installs under the standard `.agents/skills` layout. |
 | `assistant-memory` | Searches, writes, and compacts Assistant's local topic memories. | Ranked search over Markdown topic files so recall stays bounded as the topic count grows. |
-| `software-team` | Shared delivery contract for the software-team agents. | Owns work-dir layout, phases, spawn rule, review format, and escalation. Runtime work lives under `.agents/work/<slug>/` in the consuming project. |
+| `software-team` | Shared delivery contract for the software-team agents. | Owns work-dir layout, phases, dynamic custom agents, spawn rule, review format, and escalation. |
