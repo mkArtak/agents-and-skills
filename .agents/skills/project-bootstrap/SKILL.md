@@ -1,10 +1,10 @@
 ---
 name: project-bootstrap
 description: >
-  Manage user-level portfolio registry of active projects and bootstrap new
-  project repositories with full multi-harness agent scaffolding. Use when
-  querying active projects, registering repositories, bootstrapping new
-  projects, or delegating project-scoped initiatives.
+  Manage portfolio registry of active projects and bootstrap new project
+  repositories with full multi-harness agent scaffolding. Use when querying
+  active projects, registering repositories, bootstrapping new projects,
+  or delegating project-scoped initiatives.
 compatibility: Node.js >= 18, git CLI optional for repository initialization.
 metadata:
   author: mkArtak
@@ -15,11 +15,11 @@ metadata:
 
 # project-bootstrap
 
-Skill for maintaining a user-level portfolio registry across projects and bootstrapping new project repositories with the standard cross-harness agent team layout.
+Skill for maintaining a portfolio registry across projects and bootstrapping new project repositories with the standard cross-harness agent team layout.
 
 ## Portfolio Registry
 
-The registry is stored at `~/.memory/assistant/projects.json` (user home directory), persisting active projects across sessions:
+The registry is stored at `.memory/assistant/projects.json` within the root folder structure where the assistant agent is installed and configured:
 
 ```json
 {
@@ -27,8 +27,8 @@ The registry is stored at `~/.memory/assistant/projects.json` (user home directo
   "projects": [
     {
       "name": "payment-service",
-      "path": "C:/Users/artak/src/payment-service",
-      "description": "Stripe & PayPal billing service",
+      "path": "/path/to/payment-service",
+      "description": "Billing and payment integration service",
       "stack": "Node.js / Express / TypeScript",
       "status": "active",
       "createdAt": "2026-10-30T12:00:00.000Z",
@@ -44,11 +44,11 @@ Run commands via `node scripts/portfolio.js`:
 
 - **List registered projects**:
   ```bash
-  node scripts/portfolio.js list [--json]
+  node scripts/portfolio.js list [--json] [--root <path>]
   ```
 - **Get project details**:
   ```bash
-  node scripts/portfolio.js get <project-name> [--json]
+  node scripts/portfolio.js get <project-name> [--json] [--root <path>]
   ```
 - **Register / update an existing project**:
   ```bash
@@ -82,7 +82,7 @@ node scripts/portfolio.js bootstrap --name <name> --target <target-directory> --
    - `AGENTS.md` (cross-harness rules & 300-line limit).
    - `.gitignore` (ignoring `.memory/`, `.agents/work/`, OS artifacts).
    - `README.md` (project overview & agent team instructions).
-6. Registers the new repository directly into `~/.memory/assistant/projects.json`.
+6. Registers the new repository directly into the assistant's `.memory/assistant/projects.json`.
 
 ## Delegation Protocol
 

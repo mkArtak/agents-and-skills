@@ -75,7 +75,7 @@ All custom agents are mirrored across `.agents/agents/`, `.grok/agents/`, `.clau
 When driving work across projects, interaction follows a hierarchical model paired with partitioned storage:
 
 1. **User $\leftrightarrow$ Assistant (Portfolio Orchestration & Recall)**:
-   - **Assistant** is the persistent user-level companion operating across repositories (e.g. `~/src/`). It maintains the portfolio registry in `~/.memory/assistant/projects.json`, bootstraps new repositories with multi-harness agent setups on demand, and delegates project initiatives to each repository's `project-lead`.
+   - **Assistant** is the persistent companion operating from the user-defined root or portfolio directory. It maintains the portfolio registry in `.memory/assistant/projects.json` within its setup folder structure, bootstraps new repositories with multi-harness agent setups on demand, and delegates project initiatives to each repository's `project-lead`.
 2. **Assistant / User $\leftrightarrow$ Project Lead (Product & Solution Scope)**:
    - **Project Lead** owns requirements and solution specifications (`req/`, `spec/`) for a single repository. When a project demands specialized skills, Project Lead creates and mirrors on-demand custom agents (e.g. `devops-engineer`, `database-engineer`), then hands technical execution to **Team Lead**.
 3. **Project Lead $\to$ Team Lead (Technical Handoff & Spec Validation)**:
@@ -91,9 +91,9 @@ When driving work across projects, interaction follows a hierarchical model pair
 flowchart TD
     User(["👤 User / Stakeholder"])
 
-    subgraph Portfolio ["User / Portfolio Level (~/src)"]
+    subgraph Portfolio ["Portfolio / Assistant Setup Root"]
         AST["🧠 Assistant<br/><i>Portfolio orchestrator, registry & bootstrapping</i>"]
-        PORT_MEM[("🗄️ ~/.memory/assistant/<br/>projects.json & topics/")]
+        PORT_MEM[("🗄️ .memory/assistant/<br/>projects.json & topics/")]
     end
 
     subgraph Coordination ["Project-Level Coordination (per repo)"]
@@ -173,7 +173,7 @@ When adding a new agent:
 
 | Agent | Purpose | Notes |
 | --- | --- | --- |
-| `assistant` | Persistent personal assistant & portfolio orchestrator. Tracks user projects, bootstraps repos, and recalls topics. | Uses `assistant-memory` and `project-bootstrap`. Maintains project registry in `~/.memory/assistant/projects.json` and topic memories under `~/.memory/assistant/`. Delegates project tasks to `project-lead`. |
+| `assistant` | Persistent personal assistant & portfolio orchestrator. Tracks user projects, bootstraps repos, and recalls topics. | Uses `assistant-memory` and `project-bootstrap`. Maintains project registry in `.memory/assistant/projects.json` and topic memories within its setup folder structure. Delegates project tasks to `project-lead`. |
 | `project-lead` | Collects, clarifies, and stores requirements; creates on-demand custom agents; reads GitHub issues; coordinates team loop. | Uses `software-team`. Writes `STATUS.md`, `req/`, and `spec/` under `.agents/work/<slug>/`. Creates and mirrors custom agents when needed. Hands off technical work to `team-lead`. |
 | `team-lead` | Validates specs, reviews architecture/code, manages GitHub issues, assigns work to workers and custom agents. | Uses `software-team`. Manages `tasks/`, `reviews/`, and GitHub issue lifecycle. Directs `architect`, `coder`, `frontend-engineer`, `tester`, and any on-demand custom agents. |
 | `architect` | Extensible, loosely coupled architecture and stack recommendations. | Uses `software-team`. Writes architecture plans and designs under `arch/` (`architecture.md` and `arch.<subsystem>.md`) with Mermaid diagrams; never production code. |

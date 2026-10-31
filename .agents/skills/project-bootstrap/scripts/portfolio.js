@@ -11,36 +11,6 @@ const { execSync } = require("node:child_process");
 const DEFAULT_AGENT = "assistant";
 const REGISTRY_FILE = "projects.json";
 
-function getPortfolioFile() {
-  const memRoot = path.join(os.homedir(), ".memory", DEFAULT_AGENT);
-  if (!fs.existsSync(memRoot)) {
-    fs.mkdirSync(memRoot, { recursive: true });
-  }
-  return path.join(memRoot, REGISTRY_FILE);
-}
-
-function loadRegistry() {
-  const filePath = getPortfolioFile();
-  if (!fs.existsSync(filePath)) {
-    return { version: "1.0", projects: [] };
-  }
-  try {
-    const raw = fs.readFileSync(filePath, "utf8");
-    const data = JSON.parse(raw);
-    if (!Array.isArray(data.projects)) {
-      data.projects = [];
-    }
-    return data;
-  } catch (err) {
-    return { version: "1.0", projects: [] };
-  }
-}
-
-function saveRegistry(data) {
-  const filePath = getPortfolioFile();
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
-}
-
 function normalizePath(p) {
   return path.resolve(p).replace(/\\/g, "/");
 }
@@ -59,6 +29,58 @@ function findRepoRoot(startDirectory) {
   }
 }
 
+function getPortfolioRoot(customRoot) {
+  if (customRoot) return path.resolve(customRoot);
+  if (process.env.PORTFOLIO_ROOT) return path.resolve(process.env.PORTFOLIO_ROOT);
+  if (process.env.MEMORY_ROOT) return path.resolve(process.env.MEMORY_ROOT);
+  const cwdRoot = findRepoRoot(process.cwd());
+  if (cwdRoot) return cwdRoot;
+  const scriptRoot = findRepoRoot(__dirname);
+  if (scriptRoot) return scriptRoot;
+  return process.cwd();
+}
+
+function getPortfolioFile(customRoot) {
+  const baseDir = getPortfolioRoot(customRoot);
+  const memRoot = path.join(baseDir, ".memory", DEFAULT_AGENT);
+  if (!fs.existsSync(memRoot)) {
+    fs.mkdirSync(memRoot, { recursive: true });
+  }
+  return path.join(memRoot, REGISTRY_FILE);
+}
+
+function extractRootOption(args) {
+  const idx = args.indexOf("--root");
+  if (idx !== -1 && args[idx + 1]) {
+    const val = args[idx + 1];
+    args.splice(idx, 2);
+    return val;
+  }
+  return null;
+}
+
+function loadRegistry(customRoot) {
+  const filePath = getPortfolioFile(customRoot);
+  if (!fs.existsSync(filePath)) {
+    return { version: "1.0", projects: [] };
+  }
+  try {
+    const raw = fs.readFileSync(filePath, "utf8");
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data.projects)) {
+      data.projects = [];
+    }
+    return data;
+  } catch (err) {
+    return { version: "1.0", projects: [] };
+  }
+}
+
+function saveRegistry(data, customRoot) {
+  const filePath = getPortfolioFile(customRoot);
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf8");
+}
+
 function copyDirRecursive(src, dest) {
   if (!fs.existsSync(src)) return;
   fs.mkdirSync(dest, { recursive: true });
@@ -75,8 +97,9 @@ function copyDirRecursive(src, dest) {
 }
 
 function cmdList(args) {
+  const root = extractRootOption(args);
   const isJson = args.includes("--json");
-  const reg = loadRegistry();
+  const reg = loadRegistry(root);
 
   if (isJson) {
     console.log(JSON.stringify(reg.projects, null, 2));
@@ -101,14 +124,15 @@ function cmdList(args) {
 }
 
 function cmdGet(args) {
+  const root = extractRootOption(args);
   const name = args[0];
   const isJson = args.includes("--json");
   if (!name || name.startsWith("--")) {
-    console.error("Usage: portfolio get <project-name> [--json]");
+    console.error("Usage: portfolio get <project-name> [--json] [--root <path>]");
     process.exit(1);
   }
 
-  const reg = loadRegistry();
+  const reg = loadRegistry(root);
   const found = reg.projects.find(p => p.name.toLowerCase() === name.toLowerCase());
   if (!found) {
     console.error(`Project '${name}' not found in portfolio registry.`);
@@ -129,6 +153,7 @@ function cmdGet(args) {
 }
 
 function cmdAdd(args) {
+  const root = extractRootOption(args);
   let name, pPath, description, stack, status = "active";
 
   for (let i = 0; i < args.length; i++) {
@@ -141,12 +166,12 @@ function cmdAdd(args) {
   }
 
   if (!name || !pPath) {
-    console.error("Usage: portfolio add --name <name> --path <path> [--description <desc>] [--stack <stack>] [--status <status>]");
+    console.error("Usage: portfolio add --name <name> --path <path> [--description <desc>] [--stack <stack>] [--status <status>] [--root <path>]");
     process.exit(1);
   }
 
   const normPath = normalizePath(pPath);
-  const reg = loadRegistry();
+  const reg = loadRegistry(root);
   const existing = reg.projects.find(p => p.name.toLowerCase() === name.toLowerCase());
 
   const now = new Date().toISOString();
@@ -156,7 +181,7 @@ function cmdAdd(args) {
     if (stack !== undefined) existing.stack = stack;
     if (status !== undefined) existing.status = status;
     existing.lastActive = now;
-    saveRegistry(reg);
+    saveRegistry(reg, root);
     console.log(`Updated existing project '${name}' in portfolio registry.`);
   } else {
     reg.projects.push({
@@ -168,19 +193,20 @@ function cmdAdd(args) {
       createdAt: now,
       lastActive: now,
     });
-    saveRegistry(reg);
+    saveRegistry(reg, root);
     console.log(`Added project '${name}' (${normPath}) to portfolio registry.`);
   }
 }
 
 function cmdUpdate(args) {
+  const root = extractRootOption(args);
   const name = args[0];
   if (!name || name.startsWith("--")) {
-    console.error("Usage: portfolio update <name> [--path <path>] [--description <desc>] [--stack <stack>] [--status <status>]");
+    console.error("Usage: portfolio update <name> [--path <path>] [--description <desc>] [--stack <stack>] [--status <status>] [--root <path>]");
     process.exit(1);
   }
 
-  const reg = loadRegistry();
+  const reg = loadRegistry(root);
   const p = reg.projects.find(x => x.name.toLowerCase() === name.toLowerCase());
   if (!p) {
     console.error(`Project '${name}' not found.`);
@@ -195,18 +221,19 @@ function cmdUpdate(args) {
     else if (a === "--status" && args[i + 1]) p.status = args[++i];
   }
   p.lastActive = new Date().toISOString();
-  saveRegistry(reg);
+  saveRegistry(reg, root);
   console.log(`Updated project '${name}' in portfolio registry.`);
 }
 
 function cmdRemove(args) {
+  const root = extractRootOption(args);
   const name = args[0];
   if (!name) {
-    console.error("Usage: portfolio remove <name>");
+    console.error("Usage: portfolio remove <name> [--root <path>]");
     process.exit(1);
   }
 
-  const reg = loadRegistry();
+  const reg = loadRegistry(root);
   const initialLen = reg.projects.length;
   reg.projects = reg.projects.filter(p => p.name.toLowerCase() !== name.toLowerCase());
 
@@ -215,11 +242,12 @@ function cmdRemove(args) {
     process.exit(1);
   }
 
-  saveRegistry(reg);
+  saveRegistry(reg, root);
   console.log(`Removed project '${name}' from portfolio registry.`);
 }
 
 function cmdBootstrap(args) {
+  const root = extractRootOption(args);
   let name, targetDir, description = "", stack = "", sourceRepo;
 
   for (let i = 0; i < args.length; i++) {
@@ -232,7 +260,7 @@ function cmdBootstrap(args) {
   }
 
   if (!name || !targetDir) {
-    console.error("Usage: portfolio bootstrap --name <name> --target <target-directory> [--description <desc>] [--stack <stack>] [--source <source-repo>]");
+    console.error("Usage: portfolio bootstrap --name <name> --target <target-directory> [--description <desc>] [--stack <stack>] [--source <source-repo>] [--root <path>]");
     process.exit(1);
   }
 
@@ -275,7 +303,7 @@ function cmdBootstrap(args) {
       fs.mkdirSync(hDir, { recursive: true });
     }
 
-    // Copy agent files (architect, coder, frontend-engineer, project-lead, team-lead, tester)
+    // Copy agent files
     const agentFiles = ["architect.md", "coder.md", "frontend-engineer.md", "project-lead.md", "team-lead.md", "tester.md"];
     for (const f of agentFiles) {
       const srcAgent = path.join(agentsSrcDir, f);
@@ -364,7 +392,7 @@ Start any new initiative by invoking \`project-lead\`!
 
   // 6. Register in Portfolio
   const normPath = normalizePath(resolvedTarget);
-  const reg = loadRegistry();
+  const reg = loadRegistry(root);
   const existing = reg.projects.find(p => p.name.toLowerCase() === name.toLowerCase());
   const now = new Date().toISOString();
 
@@ -384,7 +412,7 @@ Start any new initiative by invoking \`project-lead\`!
       lastActive: now,
     });
   }
-  saveRegistry(reg);
+  saveRegistry(reg, root);
   console.log(`Successfully bootstrapped '${name}' and registered in portfolio registry.`);
 }
 
@@ -393,12 +421,12 @@ function printHelp() {
 portfolio - Multi-project registry and bootstrapping tool
 
 Usage:
-  node scripts/portfolio.js list [--json]
-  node scripts/portfolio.js get <project-name> [--json]
-  node scripts/portfolio.js add --name <name> --path <path> [--description <desc>] [--stack <stack>] [--status <status>]
-  node scripts/portfolio.js update <name> [--path <path>] [--description <desc>] [--stack <stack>] [--status <status>]
-  node scripts/portfolio.js remove <name>
-  node scripts/portfolio.js bootstrap --name <name> --target <target-dir> [--description <desc>] [--stack <stack>] [--source <source-repo>]
+  node scripts/portfolio.js list [--json] [--root <path>]
+  node scripts/portfolio.js get <project-name> [--json] [--root <path>]
+  node scripts/portfolio.js add --name <name> --path <path> [--description <desc>] [--stack <stack>] [--status <status>] [--root <path>]
+  node scripts/portfolio.js update <name> [--path <path>] [--description <desc>] [--stack <stack>] [--status <status>] [--root <path>]
+  node scripts/portfolio.js remove <name> [--root <path>]
+  node scripts/portfolio.js bootstrap --name <name> --target <target-dir> [--description <desc>] [--stack <stack>] [--source <source-repo>] [--root <path>]
 `);
 }
 
